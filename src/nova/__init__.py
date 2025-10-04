@@ -4,7 +4,7 @@ Nova 是一個統一的代碼審計、質量檢查和效能分析平台，
 基於 TurboCode Kit (TCK) 優化的高效能實現。
 """
 
-__version__ = "1.0.0"
+__version__ = "1.0.1"
 __author__ = "Nova Team"
 
 __all__ = [

@@ -59,9 +59,9 @@ Nova-Source/
 
 ## 安裝
 
-```bash
-pip install -e .
-```
+| 命令 | 說明 |
+|-----|------|
+| `pip install -e .` | 開發模式安裝 |
 
 ## 使用
 
@@ -82,81 +82,51 @@ pip install -e .
 
 #### 代碼審計 (`nova audit`)
 
-```bash
-# 基本檢查
-nova audit
-
-# 詳細檢查包含統計
-nova audit --detailed
-
-# 檢查特定路徑
-nova audit --path src/nova/
-
-# 檢查特定檔案
-nova audit --files src/nova/cli.py src/nova/core/config.py
-```
+| 命令 | 說明 |
+|-----|------|
+| `nova audit` | 基本檢查 |
+| `nova audit --detailed` | 詳細檢查包含統計 |
+| `nova audit --path src/nova/` | 檢查特定路徑 |
+| `nova audit --files src/nova/cli.py src/nova/core/config.py` | 檢查特定檔案 |
 
 #### 代碼分析 (`nova analyze`)
 
-```bash
-# 分析當前目錄
-nova analyze
-
-# 分析特定目錄
-nova analyze --path src/
-```
+| 命令 | 說明 |
+|-----|------|
+| `nova analyze` | 分析當前目錄 |
+| `nova analyze --path src/` | 分析特定目錄 |
 
 #### 系統監控 (`nova monitor`)
 
-```bash
-# 單次監控
-nova monitor
-
-# 連續監控 5 分鐘
-nova monitor --continuous 300
-
-# 每 10 秒監控一次
-nova monitor --continuous 300 --interval 10
-```
+| 命令 | 說明 |
+|-----|------|
+| `nova monitor` | 單次監控 |
+| `nova monitor --continuous 300` | 連續監控 5 分鐘 |
+| `nova monitor --continuous 300 --interval 10` | 每 10 秒監控一次 |
 
 #### CPU 監控 (`nova cpu`)
 
-```bash
-# 基本 CPU 檢查
-nova cpu
-
-# 檢查 CPU 延遲 (閾值 80%)
-nova cpu --delay-check 80
-```
+| 命令 | 說明 |
+|-----|------|
+| `nova cpu` | 基本 CPU 檢查 |
+| `nova cpu --delay-check 80` | 檢查 CPU 延遲 (閾值 80%) |
 
 #### 記憶體清理 (`nova cleanup`)
 
-```bash
-# 正常清理
-nova cleanup
-
-# 關鍵清理 (更激進)
-nova cleanup --level critical
-```
+| 命令 | 說明 |
+|-----|------|
+| `nova cleanup` | 正常清理 |
+| `nova cleanup --level critical` | 關鍵清理 (更激進) |
 
 #### Markdown 處理 (`nova markdown`)
 
-```bash
-# 格式化單個檔案
-nova markdown README.md
-
-# 格式化整個目錄
-nova markdown docs/
-
-# 遞歸處理子目錄
-nova markdown . --recursive
-
-# 僅檢查不修改
-nova markdown docs/ --dry-run
-
-# 自訂行長度限制
-nova markdown docs/ --max-line-length 100
-```
+| 命令 | 說明 |
+|-----|------|
+| `nova markdown README.md` | 格式化單個檔案 |
+| `nova markdown docs/` | 格式化整個目錄 |
+| `nova markdown . --recursive` | 遞歸處理子目錄 |
+| `nova markdown docs/ --dry-run` | 僅檢查不修改 |
+| `nova markdown docs/ --max-line-length 100` | 自訂行長度限制 |
 
 ## 配置
 
@@ -181,62 +151,74 @@ ruff_exclude_patterns = ["*.ipynb", "node_modules/*"]
 
 ### 環境設置
 
-```bash
-python -m venv venv
-venv\Scripts\activate  # Windows
-pip install -e ".[dev]"
-```
+| 命令 | 說明 |
+|-----|------|
+| `python -m venv venv` | 創建虛擬環境 |
+| `venv\Scripts\activate` | 啟動虛擬環境 (Windows) |
+| `pip install -e ".[dev]"` | 安裝開發依賴 |
 
 ### 運行測試
 
-```bash
-python -m pytest
-```
+| 命令 | 說明 |
+|-----|------|
+| `python -m pytest` | 運行所有測試 |
 
 ### 代碼格式化
 
-```bash
-black src/
-ruff check src/ --fix
-```
+| 命令 | 說明 |
+|-----|------|
+| `black src/` | 使用 Black 格式化代碼 |
+| `ruff check src/ --fix` | 使用 Ruff 檢查並修復代碼 |
 
 ## 📦 專案功能總覽
 
 ### 🔍 代碼審計模組
 
-- **代碼質量檢查**: 自動檢查代碼規範和最佳實踐
-- **詳細統計**: 提供項目規模、複雜度等統計信息
-- **Ruff 集成**: 使用現代 Python 代碼檢查工具
-- **自動修復**: 支持自動修復常見代碼問題
+| 功能 | 說明 |
+|-----|------|
+| 代碼質量檢查 | 自動檢查代碼規範和最佳實踐 |
+| 詳細統計 | 提供項目規模、複雜度等統計信息 |
+| Ruff 集成 | 使用現代 Python 代碼檢查工具 |
+| 自動修復 | 支持自動修復常見代碼問題 |
 
 ### 📊 系統監控
 
-- **即時記憶體監控**: 追蹤記憶體使用情況
-- **連續監控模式**: 支持長時間監控
-- **CPU 效能分析**: 檢查 CPU 使用率和延遲
-- **自訂監控間隔**: 靈活的監控頻率設置
+| 功能 | 說明 |
+|-----|------|
+| 即時記憶體監控 | 追蹤記憶體使用情況 |
+| 連續監控模式 | 支持長時間監控 |
+| CPU 效能分析 | 檢查 CPU 使用率和延遲 |
+| 自訂監控間隔 | 靈活的監控頻率設置 |
 
 ### 🧹 系統清理
 
-- **記憶體清理**: 釋放系統記憶體
-- **多級清理**: 正常和關鍵級別清理選項
-- **安全清理**: 不影響系統穩定性的清理操作
+| 功能 | 說明 |
+|-----|------|
+| 記憶體清理 | 釋放系統記憶體 |
+| 多級清理 | 正常和關鍵級別清理選項 |
+| 安全清理 | 不影響系統穩定性的清理操作 |
 
 ### 📝 Markdown 處理
 
-- **自動格式化**: 統一 Markdown 文件格式
-- **遞歸處理**: 支持目錄和子目錄批量處理
-- **自訂規則**: 可配置格式化規則和行長度限制
-- **備份功能**: 自動備份修改前的文件
+| 功能 | 說明 |
+|-----|------|
+| 自動格式化 | 統一 Markdown 文件格式 |
+| 遞歸處理 | 支持目錄和子目錄批量處理 |
+| 自訂規則 | 可配置格式化規則和行長度限制 |
+| 備份功能 | 自動備份修改前的文件 |
 
 ### 🔧 配置管理
 
-- **統一配置**: 集中式配置管理系統
-- **環境變數支持**: 支持 .env 文件配置
-- **靈活設定**: 可自訂各模組行為
+| 功能 | 說明 |
+|-----|------|
+| 統一配置 | 集中式配置管理系統 |
+| 環境變數支持 | 支持 .env 文件配置 |
+| 靈活設定 | 可自訂各模組行為 |
 
 ### 📢 通知系統
 
-- **Discord 集成**: 自動發送通知到 Discord
-- **自訂通知規則**: 基於事件觸發通知
-- **插件架構**: 支持擴展更多通知渠道
+| 功能 | 說明 |
+|-----|------|
+| Discord 集成 | 自動發送通知到 Discord |
+| 自訂通知規則 | 基於事件觸發通知 |
+| 插件架構 | 支持擴展更多通知渠道 |

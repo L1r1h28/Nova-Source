@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "nova-source"
-version = "1.0.0"
+version = "1.0.1"
 description = "Nova Source - 統一代碼審計、質量檢查和分析平台"
 authors = [
     {name = "Nova Team", email = "nova@example.com"},

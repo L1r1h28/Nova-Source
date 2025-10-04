@@ -1,0 +1,35 @@
+# MANIFEST.in - 控制 PyPI 發佈時包含的檔案
+# 這個檔案告訴 setuptools 哪些檔案應該包含在發佈包中
+
+# 包含基本檔案
+include LICENSE
+include README.md
+include pyproject.toml
+
+# 包含文檔檔案
+include SECURITY.md
+
+# 包含配置範本
+include .env.example
+
+# 排除開發相關檔案 (這些不會被包含)
+exclude .gitignore
+exclude .markdownlint.json
+exclude .markdownlintignore
+exclude LOCAL_USAGE.md
+
+# 排除範例目錄
+recursive-exclude examples *
+
+# 包含整個 src 目錄
+recursive-include src *.py
+
+# 包含測試檔案
+recursive-include tests *.py
+
+# 排除快取和臨時檔案
+global-exclude *.pyc
+global-exclude __pycache__
+global-exclude .pytest_cache
+global-exclude .ruff_cache
+global-exclude *.egg-info
