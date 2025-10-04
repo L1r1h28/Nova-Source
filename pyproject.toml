@@ -25,6 +25,8 @@ classifiers = [
 ]
 dependencies = [
     "tomli>=1.2.0; python_version < '3.11'",
+    "psutil>=5.8.0",
+    "GPUtil>=1.4.0",
 ]
 
 [project.optional-dependencies]

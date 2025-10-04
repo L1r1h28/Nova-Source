@@ -70,6 +70,36 @@ nova-sensor monitor --continuous 300
 nova-sensor test
 ```
 
+### 效能測試
+
+```bash
+nova-sensor performance
+```
+
+### 系統資訊
+
+```bash
+nova-sensor performance --system-info
+```
+
+### 測試特定函數
+
+```bash
+nova-sensor performance --module test_module.py --function my_function
+```
+
+### 記憶體剖析
+
+```bash
+nova-sensor performance --module test_module.py --function my_function --memory-profile
+```
+
+### 自定義迭代次數
+
+```bash
+nova-sensor performance --iterations 1000
+```
+
 ## 子套件
 
 ### nova_sensor
@@ -81,6 +111,10 @@ TCK 優化的開發工具模組，提供：
 - 自動記憶體清理
 - 連續監控模式
 - 完整的設定檔案支援
+- 效能測試和基準測試
+- 系統資源監控 (CPU, GPU, 記憶體, I/O, 網路)
+- 效能評分和比較工具
+- 記憶體剖析功能
 
 ### nova_audit
 

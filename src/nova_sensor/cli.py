@@ -8,11 +8,20 @@ import argparse
 import sys
 from pathlib import Path
 from typing import Optional
+import importlib.util
 
 from .nova_memory_monitor import (
     NovaMemoryMonitor,
     create_monitor_with_config,
     monitor_memory_continuous
+)
+from .performance_tester import (
+    NovaPerformanceTester,
+    performance_test,
+    compare_with_baseline,
+    quick_benchmark,
+    memory_profile,
+    get_system_info
 )
 
 
@@ -27,6 +36,10 @@ def create_parser() -> argparse.ArgumentParser:
   nova-sensor monitor --config config.json  # 使用自定義配置
   nova-sensor monitor --continuous 300   # 連續監控 5 分鐘
   nova-sensor test                       # 運行測試套件
+  nova-sensor performance                # 運行預設效能測試
+  nova-sensor performance --system-info  # 顯示系統資訊
+  nova-sensor performance --module test.py --function my_func  # 測試特定函數
+  nova-sensor performance --iterations 1000  # 自定義迭代次數
         """
     )
 
@@ -66,6 +79,51 @@ def create_parser() -> argparse.ArgumentParser:
         '--verbose', '-v',
         action='store_true',
         help='詳細輸出'
+    )
+
+    # 效能測試命令
+    perf_parser = subparsers.add_parser(
+        'performance',
+        help='效能測試和基準測試功能'
+    )
+    perf_parser.add_argument(
+        '--iterations', '-n',
+        type=int,
+        default=100,
+        help='基準測試迭代次數 (預設: 100)'
+    )
+    perf_parser.add_argument(
+        '--output', '-o',
+        type=str,
+        default='performance_results',
+        help='輸出目錄 (預設: performance_results)'
+    )
+    perf_parser.add_argument(
+        '--function', '-f',
+        type=str,
+        help='要測試的函數名稱 (用於基準測試)'
+    )
+    perf_parser.add_argument(
+        '--module', '-m',
+        type=str,
+        help='要載入的測試模組路徑'
+    )
+    perf_parser.add_argument(
+        '--compare', '-c',
+        type=str,
+        nargs=2,
+        metavar=('BASELINE', 'OPTIMIZED'),
+        help='比較兩個函數的效能 (基準函數, 優化函數)'
+    )
+    perf_parser.add_argument(
+        '--system-info', '-s',
+        action='store_true',
+        help='顯示系統資訊'
+    )
+    perf_parser.add_argument(
+        '--memory-profile', '-p',
+        action='store_true',
+        help='執行記憶體剖析'
     )
 
     return parser
@@ -149,6 +207,122 @@ def run_tests(args: argparse.Namespace) -> int:
         return 1
 
 
+def run_performance(args: argparse.Namespace) -> int:
+    """運行效能測試"""
+    try:
+        print("🚀 啟動 Nova 效能測試器")
+
+        tester = NovaPerformanceTester(args.output)
+
+        if args.system_info:
+            # 顯示系統資訊
+            print("📊 系統資訊:")
+            system_info = get_system_info()
+            for key, value in system_info.items():
+                if isinstance(value, float):
+                    print(f"   {key}: {value:.2f}")
+                else:
+                    print(f"   {key}: {value}")
+            return 0
+
+        if args.module:
+            # 載入測試模組
+            print(f"📦 載入測試模組: {args.module}")
+            try:
+                spec = importlib.util.spec_from_file_location("test_module", args.module)
+                if spec is None:
+                    print(f"❌ 無法載入模組: {args.module}")
+                    return 1
+
+                if spec.loader is None:
+                    print(f"❌ 模組載入器無效: {args.module}")
+                    return 1
+
+                test_module = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(test_module)
+
+                if args.function:
+                    # 測試特定函數
+                    if hasattr(test_module, args.function):
+                        func = getattr(test_module, args.function)
+                        print(f"🧪 測試函數: {args.function}")
+
+                        if args.memory_profile:
+                            # 記憶體剖析
+                            profile_result = memory_profile(func)
+                            print("📊 記憶體剖析結果:")
+                            for key, value in profile_result.items():
+                                if isinstance(value, float):
+                                    print(f"   {key}: {value:.6f}")
+                                else:
+                                    print(f"   {key}: {value}")
+                            benchmark_result = None  # 記憶體剖析沒有基準測試結果
+                        else:
+                            # 基準測試
+                            benchmark_result = quick_benchmark(func, args.iterations)
+                            print("📊 基準測試結果:")
+                            print(f"   函數: {benchmark_result['function_name']}")
+                            print(f"   迭代次數: {benchmark_result['iterations']}")
+                            print(f"   平均執行時間: {benchmark_result['execution_time']['mean']:.6f} 秒")
+                            print(f"   平均記憶體使用: {benchmark_result['memory_usage']['mean'] / (1024*1024):.2f} MB")
+                            print(f"   平均 CPU 使用率: {benchmark_result['cpu_usage']['mean']:.2f}%")
+
+                        # 生成報告
+                        if benchmark_result is not None:
+                            tester.generate_report([benchmark_result])
+                    else:
+                        print(f"❌ 函數 '{args.function}' 在模組中不存在")
+                        return 1
+                else:
+                    print("❌ 請指定要測試的函數名稱 (--function)")
+                    return 1
+
+            except Exception as e:
+                print(f"❌ 載入模組時發生錯誤: {e}")
+                return 1
+
+        elif args.compare:
+            # 比較兩個函數
+            baseline_name, optimized_name = args.compare
+            print(f"🔍 效能比較: {baseline_name} vs {optimized_name}")
+
+            # 這裡需要從模組載入函數，簡化版本先跳過
+            print("⚠️ 比較功能需要指定模組 (--module)")
+            return 1
+
+        else:
+            # 預設測試記憶體監控功能
+            print("🧪 運行預設效能測試 (記憶體監控)")
+
+            from .nova_memory_monitor import NovaMemoryMonitor
+
+            def test_memory_monitor():
+                monitor = NovaMemoryMonitor()
+                stats = monitor.get_memory_stats()
+                return stats
+
+            benchmark_result = quick_benchmark(test_memory_monitor, args.iterations)
+            print("📊 記憶體監控效能測試結果:")
+            print(f"   平均執行時間: {benchmark_result['execution_time']['mean']:.6f} 秒")
+            print(f"   平均記憶體使用: {benchmark_result['memory_usage']['mean'] / (1024*1024):.2f} MB")
+            print(f"   平均 CPU 使用率: {benchmark_result['cpu_usage']['mean']:.2f}%")
+
+            # 生成報告
+            tester.generate_report([benchmark_result])
+
+        # 保存結果
+        tester.save_results()
+
+        print("✅ 效能測試完成！")
+        return 0
+
+    except Exception as e:
+        print(f"❌ 效能測試過程中發生錯誤: {e}")
+        import traceback
+        traceback.print_exc()
+        return 1
+
+
 def main() -> int:
     """主入口點"""
     parser = create_parser()
@@ -162,6 +336,8 @@ def main() -> int:
         return run_monitor(args)
     elif args.command == 'test':
         return run_tests(args)
+    elif args.command == 'performance':
+        return run_performance(args)
     else:
         print(f"❌ 未知命令: {args.command}")
         parser.print_help()
