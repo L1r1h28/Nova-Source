@@ -6,7 +6,7 @@
 import logging
 import logging.handlers
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Dict, Optional
 
 from .config import get_config
 
@@ -27,29 +27,31 @@ class NovaLogger:
         log_config = self.config.logging
 
         # 設定根日誌器
-        root_logger = logging.getLogger('nova')
-        root_logger.setLevel(getattr(logging, log_config['level'].upper(), logging.INFO))
+        root_logger = logging.getLogger("nova")
+        root_logger.setLevel(
+            getattr(logging, log_config["level"].upper(), logging.INFO)
+        )
 
         # 清除現有處理器
         root_logger.handlers.clear()
 
         # 控制台處理器
         console_handler = logging.StreamHandler()
-        console_formatter = logging.Formatter(log_config['format'])
+        console_formatter = logging.Formatter(log_config["format"])
         console_handler.setFormatter(console_formatter)
         root_logger.addHandler(console_handler)
 
         # 檔案處理器（如果指定）
-        if log_config.get('file'):
-            log_file = Path(log_config['file'])
+        if log_config.get("file"):
+            log_file = Path(log_config["file"])
             log_file.parent.mkdir(parents=True, exist_ok=True)
 
             file_handler = logging.handlers.RotatingFileHandler(
                 log_file,
-                maxBytes=10*1024*1024,  # 10MB
-                backupCount=5
+                maxBytes=10 * 1024 * 1024,  # 10MB
+                backupCount=5,
             )
-            file_formatter = logging.Formatter(log_config['format'])
+            file_formatter = logging.Formatter(log_config["format"])
             file_handler.setFormatter(file_formatter)
             root_logger.addHandler(file_handler)
 
@@ -61,18 +63,18 @@ class NovaLogger:
             self.initialize()
 
         if name not in self.loggers:
-            self.loggers[name] = logging.getLogger(f'nova.{name}')
+            self.loggers[name] = logging.getLogger(f"nova.{name}")
 
         return self.loggers[name]
 
     def set_level(self, level: str) -> None:
         """設定日誌等級"""
         log_level = getattr(logging, level.upper(), logging.INFO)
-        logging.getLogger('nova').setLevel(log_level)
+        logging.getLogger("nova").setLevel(log_level)
 
     def enable_file_logging(self, file_path: Path) -> None:
         """啟用檔案日誌"""
-        root_logger = logging.getLogger('nova')
+        root_logger = logging.getLogger("nova")
 
         # 檢查是否已經有檔案處理器
         for handler in root_logger.handlers:
@@ -83,11 +85,11 @@ class NovaLogger:
         file_path.parent.mkdir(parents=True, exist_ok=True)
         file_handler = logging.handlers.RotatingFileHandler(
             file_path,
-            maxBytes=10*1024*1024,  # 10MB
-            backupCount=5
+            maxBytes=10 * 1024 * 1024,  # 10MB
+            backupCount=5,
         )
 
-        formatter = logging.Formatter(self.config.logging['format'])
+        formatter = logging.Formatter(self.config.logging["format"])
         file_handler.setFormatter(formatter)
         root_logger.addHandler(file_handler)
 
@@ -96,7 +98,7 @@ class NovaLogger:
 _logger_instance: Optional[NovaLogger] = None
 
 
-def get_logger(name: str = 'main') -> logging.Logger:
+def get_logger(name: str = "main") -> logging.Logger:
     """獲取日誌器"""
     global _logger_instance
     if _logger_instance is None:

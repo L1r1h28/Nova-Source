@@ -4,81 +4,82 @@
 確保沒有意外提交敏感信息
 """
 
-import os
 import re
 from pathlib import Path
+
 
 def check_sensitive_files():
     """檢查是否存在敏感文件"""
     sensitive_patterns = [
-        r'\.env$',
-        r'\.env\.[a-zA-Z]+$',
-        r'.*secret.*',
-        r'.*credential.*',
-        r'.*api.*key.*',
-        r'.*token.*',
-        r'.*password.*',
-        r'.*private.*',
-        r'.*\.db$',
-        r'.*\.sqlite.*',
-        r'.*auth\.json',
-        r'.*config\.local\.json'
+        r"\.env$",
+        r"\.env\.[a-zA-Z]+$",
+        r".*secret.*",
+        r".*credential.*",
+        r".*api.*key.*",
+        r".*token.*",
+        r".*password.*",
+        r".*private.*",
+        r".*\.db$",
+        r".*\.sqlite.*",
+        r".*auth\.json",
+        r".*config\.local\.json",
     ]
 
     # 排除範本文件
-    exclude_patterns = [
-        r'.*\.example$',
-        r'.*\.template$',
-        r'.*\.sample$'
-    ]
+    exclude_patterns = [r".*\.example$", r".*\.template$", r".*\.sample$"]
 
     project_root = Path(__file__).parent
     found_sensitive = []
 
-    for file_path in project_root.rglob('*'):
+    for file_path in project_root.rglob("*"):
         if file_path.is_file():
             file_name = file_path.name
 
             # 檢查是否為範本文件
-            is_template = any(re.search(pattern, file_name, re.IGNORECASE) for pattern in exclude_patterns)
+            is_template = any(
+                re.search(pattern, file_name, re.IGNORECASE)
+                for pattern in exclude_patterns
+            )
             if is_template:
                 continue
 
             # 檢查是否為敏感文件
-            is_sensitive = any(re.search(pattern, file_name, re.IGNORECASE) for pattern in sensitive_patterns)
+            is_sensitive = any(
+                re.search(pattern, file_name, re.IGNORECASE)
+                for pattern in sensitive_patterns
+            )
             if is_sensitive:
                 found_sensitive.append(str(file_path.relative_to(project_root)))
 
     return found_sensitive
 
+
 def check_gitignore_coverage():
     """檢查 .gitignore 是否涵蓋所有必要的規則"""
     required_rules = [
-        '.env',
-        '.env.*',
-        '*.log',
-        'secrets.json',
-        'credentials/',
-        'private/',
-        '__pycache__/',
-        '*.db',
-        '*.sqlite3'
+        ".env",
+        ".env.*",
+        "*.log",
+        "secrets.json",
+        "credentials/",
+        "private/",
+        "__pycache__/",
+        "*.db",
+        "*.sqlite3",
     ]
 
-    gitignore_path = Path(__file__).parent / '.gitignore'
+    gitignore_path = Path(__file__).parent / ".gitignore"
 
     if not gitignore_path.exists():
         return False, "缺少 .gitignore 文件"
 
-    with open(gitignore_path, 'r', encoding='utf-8') as f:
+    with open(gitignore_path, encoding="utf-8") as f:
         gitignore_content = f.read()
 
-    missing_rules = []
-    for rule in required_rules:
-        if rule not in gitignore_content:
-            missing_rules.append(rule)
+    missing_rules = [rule for rule in required_rules if rule not in gitignore_content]
 
     return len(missing_rules) == 0, missing_rules
+
 
 def main():
     """主檢查函數"""
@@ -109,6 +110,7 @@ def main():
     else:
         print("\n✅ 安全檢查通過!")
         return 0
+
 
 if __name__ == "__main__":
     exit(main())

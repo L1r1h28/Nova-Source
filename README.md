@@ -2,32 +2,59 @@
 
 Nova Source 是一個統一的開發工具平台，提供代碼審計、效能測試、記憶體監控和系統分析功能。
 
-## 架構概述
+## 專案結構
 
-```bash
-nova/
-├── core/                    # 核心基礎設施
-│   ├── config.py           # 統一配置管理
-│   ├── logging.py          # 集中式日誌系統
-│   └── exceptions.py       # 自訂異常層次結構
-├── models/                 # 數據模型
-│   └── __init__.py         # 統一數據結構和模型類
-├── plugins/                # 插件系統
-│   ├── __init__.py         # 插件架構和基類
-│   └── discord.py          # Discord 通知插件
-├── utils/                  # 工具函數
-│   └── __init__.py         # 實用裝飾器和助手函數
-├── monitoring/             # 監控模組
-│   └── nova_memory_monitor.py  # 記憶體監控器
-├── testing/                # 測試模組
-│   ├── performance_tester.py   # 效能測試器
-│   ├── test_memory_monitor.py  # 監控測試
-│   └── test_performance_example.py  # 效能測試範例
-├── auditing/               # 審計模組
-│   ├── quality.py          # 代碼質量檢查器
-│   ├── analyzer.py         # 代碼分析器
-│   └── __init__.py         # 審計模組初始化
-└── cli.py                  # 統一命令行介面
+```text
+Nova-Source/
+├── .env.example                    # 環境變數範本
+├── .gitignore                      # Git 忽略規則
+├── .markdownlint.json             # Markdown 格式檢查配置
+├── .markdownlintignore            # Markdown 檢查忽略規則
+├── LICENSE                         # 授權文件
+├── pyproject.toml                  # 專案配置和依賴
+├── README.md                       # 專案說明
+├── SECURITY.md                     # 安全說明
+├── check_security.py              # 安全檢查腳本
+├── docs/                          # 文檔目錄
+├── src/
+│   └── nova/                      # 主套件
+│       ├── cli.py                 # 命令行介面
+│       ├── __init__.py            # 套件初始化
+│       ├── auditing/              # 代碼審計模組
+│       │   ├── analyzer.py        # 代碼分析器
+│       │   ├── quality.py         # 代碼質量檢查器
+│       │   └── __init__.py        # 審計模組初始化
+│       ├── config/                # 配置目錄
+│       │   └── examples/          # 配置範例
+│       │       └── memory_config.json
+│       ├── core/                  # 核心基礎設施
+│       │   ├── config.py          # 統一配置管理
+│       │   ├── exceptions.py      # 自訂異常層次結構
+│       │   └── logging.py         # 集中式日誌系統
+│       ├── markdown/              # Markdown 處理模組
+│       │   ├── backup.py          # 備份功能
+│       │   ├── formatter.py       # 格式化器
+│       │   ├── README.md          # Markdown 模組說明
+│       │   └── __init__.py        # Markdown 模組初始化
+│       ├── models/                # 數據模型
+│       │   └── __init__.py        # 統一數據結構和模型類
+│       ├── monitoring/            # 監控模組
+│       │   ├── nova_memory_monitor.py  # 記憶體監控器
+│       │   └── __init__.py        # 監控模組初始化
+│       ├── plugins/               # 插件系統
+│       │   ├── discord.py         # Discord 通知插件
+│       │   └── __init__.py        # 插件架構和基類
+│       ├── tools/                 # 工具模組
+│       │   ├── performance_tester.py     # 效能測試器
+│       │   ├── test_memory_monitor.py    # 監控測試
+│       │   └── test_performance_example.py  # 效能測試範例
+│       └── utils/                 # 工具函數
+│           └── __init__.py        # 實用裝飾器和助手函數
+└── tests/                         # 測試套件
+    └── markdown/                  # Markdown 相關測試
+        ├── test_backup.py         # 備份測試
+        ├── test_formatter.py      # 格式化器測試
+        └── __init__.py            # 測試初始化
 ```
 
 ## 安裝

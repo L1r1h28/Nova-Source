@@ -7,11 +7,9 @@
 
 import ast
 import importlib
-import json
-import functools
-from pathlib import Path
-from typing import Dict, List, Any
 from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, List
 
 
 class CodeAnalyzer:
@@ -51,7 +49,7 @@ class CodeAnalyzer:
     def analyze_file_complexity(self, file_path: Path) -> Dict[str, Any]:
         """分析單個文件的複雜度"""
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, encoding="utf-8") as f:
                 content = f.read()
 
             tree = ast.parse(content)
@@ -143,13 +141,31 @@ class CodeAnalyzer:
         """分類導入模組 - TCK優化：使用集合查找加速"""
         # TCK優化：預先將模組集合轉換為集合以實現O(1)查找
         standard_modules = {
-            "os", "sys", "json", "time", "datetime", "pathlib",
-            "typing", "ast", "importlib", "traceback", "collections", "re"
+            "os",
+            "sys",
+            "json",
+            "time",
+            "datetime",
+            "pathlib",
+            "typing",
+            "ast",
+            "importlib",
+            "traceback",
+            "collections",
+            "re",
         }
 
         third_party_modules = {
-            "torch", "transformers", "numpy", "pandas", "matplotlib",
-            "requests", "flask", "django", "scipy", "sklearn"
+            "torch",
+            "transformers",
+            "numpy",
+            "pandas",
+            "matplotlib",
+            "requests",
+            "flask",
+            "django",
+            "scipy",
+            "sklearn",
         }
 
         root_module = module_name.split(".")[0]
@@ -206,7 +222,7 @@ class CodeAnalyzer:
         # 檢查每個文件的導入
         for file_path in self.python_files:
             try:
-                with open(file_path, "r", encoding="utf-8") as f:
+                with open(file_path, encoding="utf-8") as f:
                     content = f.read()
 
                 tree = ast.parse(content)
@@ -250,9 +266,8 @@ class CodeAnalyzer:
                         }
                     )
 
-    @functools.lru_cache(maxsize=256)
     def _can_import_module(self, module_name: str) -> bool:
-        """檢查模組是否可以導入 - TCK優化：記憶化快取避免重複導入檢查"""
+        """檢查模組是否可以導入"""
         try:
             importlib.import_module(module_name)
             return True
@@ -313,8 +328,14 @@ class CodeAnalyzer:
                     # 找到重複，記錄詳細信息
                     duplicate_files = [file_path]
                     for other_file, other_analysis in self.analysis_results.items():
-                        if (other_file != file_path and "classes" in other_analysis and
-                            any(other_cls["name"] == cls["name"] for other_cls in other_analysis["classes"])):
+                        if (
+                            other_file != file_path
+                            and "classes" in other_analysis
+                            and any(
+                                other_cls["name"] == cls["name"]
+                                for other_cls in other_analysis["classes"]
+                            )
+                        ):
                             duplicate_files.append(other_analysis["file_path"])
 
                     duplicates.append(
@@ -398,43 +419,3 @@ class CodeAnalyzer:
                 print(f"   - {dup['type']}: {dup['name']} ({len(dup['files'])} 個文件)")
 
         return results
-
-
-def main():
-    """命令行入口點"""
-    import argparse
-
-    parser = argparse.ArgumentParser(
-        description="Nova AI 代碼分析工具",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-使用範例:
-  nova-analyze                    # 分析當前目錄
-  nova-analyze --path src/        # 分析指定路徑
-  nova-analyze --help             # 顯示幫助信息
-        """
-    )
-
-    parser.add_argument(
-        '--path', '-p',
-        type=str,
-        default='.',
-        help='要分析的目錄路徑 (預設: 當前目錄)'
-    )
-
-    args = parser.parse_args()
-
-    # 創建分析器並運行分析
-    analyzer = CodeAnalyzer(args.path)
-    results = analyzer.analyze_all_files()
-
-    # 保存結果
-    results_file = Path("code_analysis_results.json")
-    with open(results_file, "w", encoding="utf-8") as f:
-        json.dump(results, f, indent=2, ensure_ascii=False, default=str)
-
-    print(f"\n分析結果已保存到: {results_file}")
-
-
-if __name__ == "__main__":
-    main()

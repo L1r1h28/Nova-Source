@@ -214,3 +214,27 @@ temp/
 
 # 安全檢查腳本 (可選)
 # check_security.py
+
+# Nova Source 特定文件
+code_analysis_results.json
+performance_results/
+*.pycache
+
+# IDE 和編輯器
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+
+# OS 特定
+.DS_Store
+Thumbs.db
+
+# 日誌文件
+*.log
+logs/
+
+# 環境變數
+.env
+.env.local
+.env.*.local

@@ -4,11 +4,17 @@ Nova 記憶體監控器測試腳本
 Nova Memory Monitor Test Script
 """
 
-import sys
 import os
+import sys
+
 sys.path.insert(0, os.path.dirname(__file__))
 
-from nova_memory_monitor import NovaMemoryMonitor, create_monitor_with_config, monitor_memory_continuous
+from nova.monitoring.nova_memory_monitor import (
+    NovaMemoryMonitor,
+    create_monitor_with_config,
+    monitor_memory_continuous,
+)
+
 
 def test_basic_functionality():
     """測試基本功能"""
@@ -34,6 +40,7 @@ def test_basic_functionality():
 
     return True
 
+
 def test_config_loading():
     """測試設定載入功能"""
     print("\n🧪 測試設定載入功能")
@@ -44,13 +51,14 @@ def test_config_loading():
         print("✅ 設定檔案載入成功")
 
         # 驗證設定
-        stats = monitor.get_memory_stats()
+        monitor.get_memory_stats()
         print(f"✅ 設定應用成功 - 閾值: {monitor.thresholds.normal:.1%}")
 
         return True
     except Exception as e:
         print(f"❌ 設定載入測試失敗: {e}")
         return False
+
 
 def test_continuous_monitoring():
     """測試連續監控功能 (短時間測試)"""
@@ -71,6 +79,39 @@ def test_continuous_monitoring():
         print(f"❌ 連續監控測試失敗: {e}")
         return False
 
+
+def test_cpu_monitoring():
+    """測試 CPU 監控功能"""
+    print("\n🧪 測試 CPU 監控功能")
+
+    try:
+        monitor = NovaMemoryMonitor()
+
+        # 測試 CPU 使用率獲取
+        cpu_percent = monitor.get_cpu_percent()
+        print(f"✅ CPU 使用率獲取成功: {cpu_percent:.1f}%")
+
+        # 測試 CPU 延遲判斷
+        should_delay = monitor.should_cpu_delay(threshold=50.0)  # 低閾值以確保測試
+        print(f"✅ CPU 延遲判斷: {'需要延遲' if should_delay else '無需延遲'}")
+
+        # 測試智慧延遲 (短延遲)
+        print("⏳ 測試智慧延遲功能...")
+        monitor.smart_cpu_delay(threshold=90.0, max_delay=0.1)  # 高閾值，短延遲
+        print("✅ 智慧延遲測試完成")
+
+        # 驗證統計資料包含 CPU 資訊
+        stats = monitor.get_memory_stats()
+        print(
+            f"✅ 統計資料包含 CPU 資訊: {stats.cpu_percent:.1f}% ({stats.cpu_count} 核心)"
+        )
+
+        return True
+    except Exception as e:
+        print(f"❌ CPU 監控測試失敗: {e}")
+        return False
+
+
 def main():
     """主測試函數"""
     print("🚀 Nova 記憶體監控器完整測試套件\n")
@@ -78,7 +119,8 @@ def main():
     tests = [
         ("基本功能測試", test_basic_functionality),
         ("設定載入測試", test_config_loading),
-        ("連續監控測試", test_continuous_monitoring)
+        ("連續監控測試", test_continuous_monitoring),
+        ("CPU 監控測試", test_cpu_monitoring),
     ]
 
     passed = 0
@@ -102,6 +144,7 @@ def main():
     else:
         print("⚠️  部分測試失敗，請檢查配置")
         return 1
+
 
 if __name__ == "__main__":
     sys.exit(main())

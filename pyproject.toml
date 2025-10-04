@@ -34,15 +34,17 @@ dev = [
     "ruff>=0.1.0",
     "black>=23.0.0",
 ]
+markdown = [
+    "markdown>=3.4.0",
+    "pyyaml>=6.0",
+    "requests>=2.28.0",
+]
 
 [project.scripts]
 nova = "nova.cli:main"
-nova-audit = "nova.auditing.quality:main"
-nova-analyze = "nova.auditing.analyzer:main"
-nova-sensor = "nova.monitoring.cli:main"
 
 [tool.setuptools.packages.find]
-where = ["src"]
+where = ["."]
 
 [tool.ruff]
 line-length = 88
@@ -68,3 +70,6 @@ target-version = ['py38']
 
 [tool.isort]
 profile = "black"
+
+[tool.code-quality]
+format_candidates = ["src", "tests", "check_security.py"]

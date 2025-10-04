@@ -5,7 +5,13 @@ Nova Optimized Memory Monitor - Based on TCK Optimization Blueprints
 
 優化策略:
 - ✅ Dataclass 優化: 使用 @dataclass 提升物件效能
-- ✅ LRU Cache: 使用 @lru_cache 快取設定載入
+- ✅ LRU Cache: 使用 @lru_cache 快取            # 輕量 GPU 快取清理
+            if TORCH_AVAILABLE and torch is not None and torch.cuda.is_available():  # type: ignore
+                try:
+                    torch.cuda.empty_cache()  # type: ignore
+                    print("✅ GPU 快取清理完成")
+                except Exception as e:
+                    print(f"❌ GPU 快取清理失敗: {e}")
 - ✅ 集合操作: 使用 set() 優化查找操作
 - ✅ 生成器表達式: 使用生成器節省記憶體
 - ✅ 字串 join: 使用 str.join() 優化字串操作
@@ -14,18 +20,27 @@ Nova Optimized Memory Monitor - Based on TCK Optimization Blueprints
 
 import gc
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from functools import lru_cache
-from typing import Dict, Any, Optional, List, Tuple
-import psutil
+from typing import Any, Dict, List, Optional
+
 import GPUtil
+import psutil
+
+try:
+    import torch
+
+    TORCH_AVAILABLE = True
+except ImportError:
+    torch = None  # type: ignore
+    TORCH_AVAILABLE = False
 
 # === 常數提取 (模組級別快取) ===
 DEFAULT_THRESHOLD = 0.85
 DEFAULT_CRITICAL_THRESHOLD = 0.95
 DEFAULT_CHECK_INTERVAL = 30
-GB_DIVISOR = 1024 ** 3
-MB_DIVISOR = 1024 ** 2
+GB_DIVISOR = 1024**3
+MB_DIVISOR = 1024**2
 
 # === 字串常數 (避免重複字串操作) ===
 MEMORY_STATS_HEADER = "\n記憶體監控統計:"
@@ -34,6 +49,7 @@ USED_MEMORY_FMT = "   已使用: {:.1f} GB ({:.1f}%)"
 AVAILABLE_MEMORY_FMT = "   可用: {:.1f} GB"
 THRESHOLDS_FMT = "   清理閾值: {:.1f}% / {:.1f}%"
 CLEANUP_COUNT_FMT = "   清理次數: {}"
+CPU_INFO_FMT = "   CPU 使用率: {:.1f}% (核心數: {})"
 GPU_INFO_FMT = "   GPU ({}): {:.0f} MB / {:.0f} MB"
 GPU_UTIL_FMT = "   GPU 使用率: {:.1f}%"
 GPU_ERROR_FMT = "   GPU 錯誤: {}"
@@ -41,9 +57,11 @@ NO_GPU_MSG = "   未檢測到 GPU"
 LAST_CLEANUP_FMT = "   最後清理: {}級別，{:.1f}秒前"
 CLEANUP_TIME_FMT = "清理耗時: {:.3f} 秒"
 
+
 @dataclass(frozen=True)
 class MemoryThresholds:
     """記憶體閾值設定 (使用 dataclass 優化)"""
+
     normal: float = DEFAULT_THRESHOLD
     critical: float = DEFAULT_CRITICAL_THRESHOLD
 
@@ -56,16 +74,20 @@ class MemoryThresholds:
         if self.normal >= self.critical:
             raise ValueError("標準閾值必須小於危險閾值")
 
+
 @dataclass
 class CleanupRecord:
     """清理記錄 (使用 dataclass 優化)"""
+
     level: str
     timestamp: float
     duration: float = 0.0
 
+
 @dataclass
 class MemoryStats:
     """記憶體統計資料 (使用 dataclass 優化)"""
+
     total: int
     available: int
     used: int
@@ -82,6 +104,10 @@ class MemoryStats:
     gpu_memory_util: float = 0.0
     gpu_error: str = ""
 
+    # CPU 資訊 (新增)
+    cpu_percent: float = 0.0
+    cpu_count: int = 0
+
     @property
     def total_gb(self) -> float:
         """總記憶體 (GB)"""
@@ -96,6 +122,7 @@ class MemoryStats:
     def available_gb(self) -> float:
         """可用記憶體 (GB)"""
         return self.available / GB_DIVISOR
+
 
 class NovaMemoryMonitor:
     """
@@ -134,16 +161,16 @@ class NovaMemoryMonitor:
 
         if memory_usage > self.thresholds.critical:
             print(f"⚠️  記憶體使用率危險 ({memory_usage:.1%})，強制執行深度清理")
-            return 'critical'
+            return "critical"
         elif memory_usage > self.thresholds.normal:
             print(f"⚡ 記憶體使用率過高 ({memory_usage:.1%})，執行標準清理")
-            return 'normal'
+            return "normal"
 
         return None
 
-    def cleanup_memory(self, level: str = 'normal') -> float:
+    def cleanup_memory(self, level: str = "normal") -> float:
         """
-        執行記憶體清理
+        執行記憶體清理 (增強版：包含 GPU 快取清理)
 
         Args:
             level: 清理級別 ('normal' 或 'critical')
@@ -153,25 +180,58 @@ class NovaMemoryMonitor:
         """
         start_time = time.time()
 
-        if level == 'critical':
-            # 危險級別: 完整清理 + GPU 監控
-            gc.collect()
+        if level == "critical":
+            # 危險級別: 完整清理 + GPU 快取清理
+            print("🧹 執行深度記憶體清理...")
 
-            # GPU 清理 (GPUtil 不提供直接清理，但可以監控)
+            # Python 垃圾回收
+            gc.collect()
+            print("✅ Python 垃圾回收完成")
+
+            # GPU 快取清理 (使用 torch)
+            if TORCH_AVAILABLE and torch is not None and torch.cuda.is_available():  # type: ignore
+                print("🎮 清理 GPU 快取...")
+                try:
+                    torch.cuda.empty_cache()  # type: ignore
+                    torch.cuda.ipc_collect()  # type: ignore
+                    print("✅ GPU 快取清理完成")
+                except Exception as e:
+                    print(f"❌ GPU 快取清理失敗: {e}")
+            else:
+                print("ℹ️  未檢測到 GPU 或未安裝 PyTorch")
+
+            # 傳統 GPU 監控 (GPUtil)
             try:
                 gpus = GPUtil.getGPUs()
                 if gpus:
-                    print("🎮 GPU 記憶體監控中...")
+                    print("📊 GPU 狀態監控中...")
+                    for i, gpu in enumerate(gpus):
+                        print(
+                            f"   GPU {i}: {gpu.memoryUsed:.0f}MB / {gpu.memoryTotal:.0f}MB"
+                        )
             except Exception as e:
-                print(f"❌ GPU 清理錯誤: {e}")
+                print(f"❌ GPU 監控錯誤: {e}")
 
             cleanup_record = CleanupRecord(level, time.time())
             self.cleanup_history.append(cleanup_record)
             print("✅ 危險級別記憶體清理完成")
 
         else:
-            # 標準級別: 基本清理
+            # 標準級別: 基本清理 + 輕量 GPU 清理
+            print("🧹 執行標準記憶體清理...")
+
+            # Python 垃圾回收
             gc.collect()
+            print("✅ Python 垃圾回收完成")
+
+            # 輕量 GPU 快取清理
+            if TORCH_AVAILABLE and torch is not None and torch.cuda.is_available():  # type: ignore
+                try:
+                    torch.cuda.empty_cache()  # type: ignore
+                    print("✅ GPU 快取清理完成")
+                except Exception as e:
+                    print(f"❌ GPU 快取清理失敗: {e}")
+
             cleanup_record = CleanupRecord(level, time.time())
             self.cleanup_history.append(cleanup_record)
             print("✅ 標準級別記憶體清理完成")
@@ -184,10 +244,9 @@ class NovaMemoryMonitor:
 
         return cleanup_time
 
-    @lru_cache(maxsize=1)  # 快取 GPU 資訊 (短暫)
     def _get_gpu_info_cached(self) -> Dict[str, Any]:
         """
-        獲取 GPU 資訊 (使用 LRU 快取優化)
+        獲取 GPU 資訊
 
         Returns:
             dict: GPU 資訊字典
@@ -197,30 +256,30 @@ class NovaMemoryMonitor:
             if gpus:
                 gpu = gpus[0]  # 使用第一個 GPU
                 return {
-                    'available': True,
-                    'name': gpu.name,
-                    'memory_used': gpu.memoryUsed,
-                    'memory_total': gpu.memoryTotal,
-                    'memory_util': gpu.memoryUtil * 100,
-                    'error': ''
+                    "available": True,
+                    "name": gpu.name,
+                    "memory_used": gpu.memoryUsed,
+                    "memory_total": gpu.memoryTotal,
+                    "memory_util": gpu.memoryUtil * 100,
+                    "error": "",
                 }
             else:
                 return {
-                    'available': False,
-                    'name': '',
-                    'memory_used': 0,
-                    'memory_total': 0,
-                    'memory_util': 0.0,
-                    'error': ''
+                    "available": False,
+                    "name": "",
+                    "memory_used": 0,
+                    "memory_total": 0,
+                    "memory_util": 0.0,
+                    "error": "",
                 }
         except Exception as e:
             return {
-                'available': False,
-                'name': '',
-                'memory_used': 0,
-                'memory_total': 0,
-                'memory_util': 0.0,
-                'error': str(e)
+                "available": False,
+                "name": "",
+                "memory_used": 0,
+                "memory_total": 0,
+                "memory_util": 0.0,
+                "error": str(e),
             }
 
     def get_memory_stats(self) -> MemoryStats:
@@ -233,6 +292,10 @@ class NovaMemoryMonitor:
         vm = psutil.virtual_memory()
         gpu_info = self._get_gpu_info_cached()
 
+        # 獲取 CPU 資訊
+        cpu_percent = psutil.cpu_percent(interval=1)
+        cpu_count = psutil.cpu_count(logical=True) or 0
+
         return MemoryStats(
             total=vm.total,
             available=vm.available,
@@ -241,12 +304,14 @@ class NovaMemoryMonitor:
             thresholds=self.thresholds,
             cleanup_count=len(self.cleanup_history),
             last_cleanup=self.cleanup_history[-1] if self.cleanup_history else None,
-            gpu_available=gpu_info['available'],
-            gpu_name=gpu_info['name'],
-            gpu_memory_used=gpu_info['memory_used'],
-            gpu_memory_total=gpu_info['memory_total'],
-            gpu_memory_util=gpu_info['memory_util'],
-            gpu_error=gpu_info['error']
+            gpu_available=gpu_info["available"],
+            gpu_name=gpu_info["name"],
+            gpu_memory_used=gpu_info["memory_used"],
+            gpu_memory_total=gpu_info["memory_total"],
+            gpu_memory_util=gpu_info["memory_util"],
+            gpu_error=gpu_info["error"],
+            cpu_percent=cpu_percent,
+            cpu_count=cpu_count,
         )
 
     def print_stats(self, stats: Optional[MemoryStats] = None) -> None:
@@ -266,22 +331,22 @@ class NovaMemoryMonitor:
             USED_MEMORY_FMT.format(stats.used_gb, stats.percentage),
             AVAILABLE_MEMORY_FMT.format(stats.available_gb),
             THRESHOLDS_FMT.format(
-                stats.thresholds.normal * 100,
-                stats.thresholds.critical * 100
+                stats.thresholds.normal * 100, stats.thresholds.critical * 100
             ),
-            CLEANUP_COUNT_FMT.format(stats.cleanup_count)
+            CLEANUP_COUNT_FMT.format(stats.cleanup_count),
+            CPU_INFO_FMT.format(stats.cpu_percent, stats.cpu_count),
         ]
 
         # GPU 資訊
         if stats.gpu_available:
-            output_lines.extend([
-                GPU_INFO_FMT.format(
-                    stats.gpu_name,
-                    stats.gpu_memory_used,
-                    stats.gpu_memory_total
-                ),
-                GPU_UTIL_FMT.format(stats.gpu_memory_util)
-            ])
+            output_lines.extend(
+                [
+                    GPU_INFO_FMT.format(
+                        stats.gpu_name, stats.gpu_memory_used, stats.gpu_memory_total
+                    ),
+                    GPU_UTIL_FMT.format(stats.gpu_memory_util),
+                ]
+            )
         elif stats.gpu_error:
             output_lines.append(GPU_ERROR_FMT.format(stats.gpu_error))
         else:
@@ -305,7 +370,7 @@ class NovaMemoryMonitor:
             dict: 清理摘要統計
         """
         if not self.cleanup_history:
-            return {'total_cleanups': 0, 'avg_duration': 0.0}
+            return {"total_cleanups": 0, "avg_duration": 0.0}
 
         # 使用生成器表達式優化記憶體使用
         durations = (record.duration for record in self.cleanup_history)
@@ -315,18 +380,71 @@ class NovaMemoryMonitor:
         cleanup_levels = {record.level for record in self.cleanup_history}
         level_counts = {}
         for level in cleanup_levels:
-            level_counts[level] = sum(1 for record in self.cleanup_history
-                                    if record.level == level)
+            level_counts[level] = sum(
+                1 for record in self.cleanup_history if record.level == level
+            )
 
         return {
-            'total_cleanups': len(self.cleanup_history),
-            'avg_duration': total_duration / len(self.cleanup_history),
-            'level_counts': level_counts,
-            'total_duration': total_duration
+            "total_cleanups": len(self.cleanup_history),
+            "avg_duration": total_duration / len(self.cleanup_history),
+            "level_counts": level_counts,
+            "total_duration": total_duration,
         }
 
+    def get_cpu_percent(self, interval: Optional[float] = None) -> float:
+        """
+        獲取當前 CPU 使用率
 
-def create_monitor_with_config(config_path: str = "memory_config.json") -> NovaMemoryMonitor:
+        Args:
+            interval: 監控間隔 (秒)，如果為 None 則使用預設值 1.0
+
+        Returns:
+            float: CPU 使用率百分比 (0.0-100.0)
+        """
+        try:
+            actual_interval = interval if interval is not None else 1.0
+            return psutil.cpu_percent(interval=actual_interval)
+        except Exception as e:
+            print(f"❌ 獲取 CPU 使用率失敗: {e}")
+            return 0.0
+
+    def should_cpu_delay(self, threshold: float = 80.0) -> bool:
+        """
+        判斷是否應該根據 CPU 使用率延遲執行
+
+        Args:
+            threshold: CPU 使用率閾值 (0.0-100.0)
+
+        Returns:
+            bool: 是否應該延遲
+        """
+        cpu_percent = self.get_cpu_percent()
+        return cpu_percent > threshold
+
+    def smart_cpu_delay(self, threshold: float = 80.0, max_delay: float = 0.5) -> None:
+        """
+        智慧 CPU 延遲：根據 CPU 使用率動態調整延遲時間
+
+        Args:
+            threshold: CPU 使用率閾值 (0.0-100.0)
+            max_delay: 最大延遲時間（秒）
+        """
+        if not self.should_cpu_delay(threshold):
+            print("✅ CPU 使用率正常，無需延遲")
+            return
+
+        cpu_percent = self.get_cpu_percent()
+        # 動態計算延遲時間：CPU 使用率越高，延遲越長
+        delay_time = min(max_delay, (cpu_percent / 100.0) * max_delay)
+        print(
+            f"⏳ CPU 使用率 {cpu_percent:.1f}% > {threshold:.1f}%，延遲 {delay_time:.2f} 秒"
+        )
+        time.sleep(delay_time)
+
+
+def create_monitor_with_config(
+    config_path: str = "memory_config.json",
+) -> NovaMemoryMonitor:
     """
     從設定檔案創建監控器 (使用 LRU 快取優化設定載入)
 
@@ -339,8 +457,8 @@ def create_monitor_with_config(config_path: str = "memory_config.json") -> NovaM
     config = load_memory_config_cached(config_path)
 
     thresholds = MemoryThresholds(
-        normal=config.get('threshold', DEFAULT_THRESHOLD),
-        critical=config.get('critical_threshold', DEFAULT_CRITICAL_THRESHOLD)
+        normal=config.get("threshold", DEFAULT_THRESHOLD),
+        critical=config.get("critical_threshold", DEFAULT_CRITICAL_THRESHOLD),
     )
 
     return NovaMemoryMonitor(thresholds)
@@ -363,27 +481,27 @@ def load_memory_config_cached(config_path: str) -> Dict[str, Any]:
     if not os.path.exists(config_path):
         # 返回預設設定
         return {
-            'threshold': DEFAULT_THRESHOLD,
-            'critical_threshold': DEFAULT_CRITICAL_THRESHOLD,
-            'check_interval': DEFAULT_CHECK_INTERVAL
+            "threshold": DEFAULT_THRESHOLD,
+            "critical_threshold": DEFAULT_CRITICAL_THRESHOLD,
+            "check_interval": DEFAULT_CHECK_INTERVAL,
         }
 
     try:
-        with open(config_path, 'r', encoding='utf-8') as f:
+        with open(config_path, encoding="utf-8") as f:
             return json.load(f)
     except Exception as e:
         print(f"⚠️  載入設定檔案失敗: {e}，使用預設設定")
         return {
-            'threshold': DEFAULT_THRESHOLD,
-            'critical_threshold': DEFAULT_CRITICAL_THRESHOLD,
-            'check_interval': DEFAULT_CHECK_INTERVAL
+            "threshold": DEFAULT_THRESHOLD,
+            "critical_threshold": DEFAULT_CRITICAL_THRESHOLD,
+            "check_interval": DEFAULT_CHECK_INTERVAL,
         }
 
 
 def monitor_memory_continuous(
     monitor: NovaMemoryMonitor,
     interval: int = DEFAULT_CHECK_INTERVAL,
-    duration: int = 300
+    duration: int = 300,
 ) -> Dict[str, Any]:
     """
     連續監控記憶體使用情況
@@ -421,10 +539,12 @@ def monitor_memory_continuous(
     print(f"✅ 連續監控完成，總檢查次數: {check_count}，清理次數: {cleanup_count}")
 
     return {
-        'monitoring_duration': monitoring_duration,
-        'check_count': check_count,
-        'cleanup_count': cleanup_count,
-        'checks_per_second': check_count / monitoring_duration if monitoring_duration > 0 else 0
+        "monitoring_duration": monitoring_duration,
+        "check_count": check_count,
+        "cleanup_count": cleanup_count,
+        "checks_per_second": check_count / monitoring_duration
+        if monitoring_duration > 0
+        else 0,
     }
 
 
@@ -450,7 +570,7 @@ if __name__ == "__main__":
     print("\n📈 --- 清理摘要 ---")
     summary = monitor.get_cleanup_summary()
     print(f"總清理次數: {summary['total_cleanups']}")
-    if summary['total_cleanups'] > 0:
+    if summary["total_cleanups"] > 0:
         print(f"平均清理耗時: {summary['avg_duration']:.3f} 秒")
         print(f"清理類型統計: {summary['level_counts']}")
 

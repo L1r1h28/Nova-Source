@@ -5,10 +5,10 @@
 
 import importlib
 import inspect
-from abc import ABC, abstractmethod
-from typing import Dict, Any, List, Optional, Type, Callable
-from pathlib import Path
 import pkgutil
+from abc import ABC, abstractmethod
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Type
 
 from ..core.config import get_config
 
@@ -66,7 +66,9 @@ class PluginManager:
         self.plugin_types: Dict[str, Type[PluginBase]] = {}
         self.config = get_config()
 
-    def register_plugin_type(self, plugin_type: str, base_class: Type[PluginBase]) -> None:
+    def register_plugin_type(
+        self, plugin_type: str, base_class: Type[PluginBase]
+    ) -> None:
         """註冊插件類型"""
         self.plugin_types[plugin_type] = base_class
 
@@ -80,17 +82,19 @@ class PluginManager:
 
         # 從配置中載入插件
         for plugin_name, plugin_config in plugin_configs.items():
-            if plugin_config.get('enabled', True):
+            if plugin_config.get("enabled", True):
                 self._load_plugin(plugin_name, plugin_config, base_class)
 
         # 自動發現內建插件
         self._discover_builtin_plugins(plugin_type, base_class)
 
-    def _load_plugin(self, name: str, config: Dict[str, Any], base_class: Type[PluginBase]) -> None:
+    def _load_plugin(
+        self, name: str, config: Dict[str, Any], base_class: Type[PluginBase]
+    ) -> None:
         """載入單個插件"""
         try:
-            module_name = config.get('module')
-            class_name = config.get('class', f"{name.capitalize()}Plugin")
+            module_name = config.get("module")
+            class_name = config.get("class", f"{name.capitalize()}Plugin")
 
             if module_name:
                 # 從模組載入
@@ -113,7 +117,9 @@ class PluginManager:
         except Exception as e:
             print(f"❌ 載入插件失敗 {name}: {e}")
 
-    def _find_builtin_plugin_class(self, name: str, base_class: Type[PluginBase]) -> Optional[Type[PluginBase]]:
+    def _find_builtin_plugin_class(
+        self, name: str, base_class: Type[PluginBase]
+    ) -> Optional[Type[PluginBase]]:
         """查找內建插件類"""
         # 從 plugins 目錄查找
         plugins_dir = Path(__file__).parent
@@ -123,16 +129,20 @@ class PluginManager:
                 module = importlib.import_module(f"nova.plugins.{module_name}")
                 for attr_name in dir(module):
                     attr = getattr(module, attr_name)
-                    if (inspect.isclass(attr) and
-                        issubclass(attr, base_class) and
-                        attr.__name__.lower().startswith(name.lower())):
+                    if (
+                        inspect.isclass(attr)
+                        and issubclass(attr, base_class)
+                        and attr.__name__.lower().startswith(name.lower())
+                    ):
                         return attr
             except ImportError:
                 continue
 
         return None
 
-    def _discover_builtin_plugins(self, plugin_type: str, base_class: Type[PluginBase]) -> None:
+    def _discover_builtin_plugins(
+        self, plugin_type: str, base_class: Type[PluginBase]
+    ) -> None:
         """自動發現內建插件"""
         plugins_dir = Path(__file__).parent / plugin_type
 
@@ -149,11 +159,12 @@ class PluginManager:
 
                 for attr_name in dir(module):
                     attr = getattr(module, attr_name)
-                    if (inspect.isclass(attr) and
-                        issubclass(attr, base_class) and
-                        not attr_name.endswith('Plugin')):  # 避免載入基類
-
-                        plugin_name = attr_name.lower().replace('plugin', '')
+                    if (
+                        inspect.isclass(attr)
+                        and issubclass(attr, base_class)
+                        and not attr_name.endswith("Plugin")
+                    ):  # 避免載入基類
+                        plugin_name = attr_name.lower().replace("plugin", "")
                         if plugin_name not in self.plugins:  # 避免重複載入
                             plugin_instance = attr(plugin_name)
                             if plugin_instance.initialize():
@@ -173,8 +184,9 @@ class PluginManager:
         if not base_class:
             return []
 
-        return [plugin for plugin in self.plugins.values()
-                if isinstance(plugin, base_class)]
+        return [
+            plugin for plugin in self.plugins.values() if isinstance(plugin, base_class)
+        ]
 
     def enable_plugin(self, name: str) -> bool:
         """啟用插件"""
@@ -213,16 +225,16 @@ def get_plugin_manager() -> PluginManager:
     if _plugin_manager is None:
         _plugin_manager = PluginManager()
         # 註冊內建插件類型
-        _plugin_manager.register_plugin_type('notifications', NotificationPlugin)
-        _plugin_manager.register_plugin_type('monitoring', MonitoringPlugin)
+        _plugin_manager.register_plugin_type("notifications", NotificationPlugin)
+        _plugin_manager.register_plugin_type("monitoring", MonitoringPlugin)
     return _plugin_manager
 
 
 def initialize_plugins() -> None:
     """初始化所有插件"""
     manager = get_plugin_manager()
-    manager.load_plugins('notifications')
-    manager.load_plugins('monitoring')
+    manager.load_plugins("notifications")
+    manager.load_plugins("monitoring")
 
 
 def cleanup_plugins() -> None:

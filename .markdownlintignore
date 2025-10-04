@@ -1,0 +1,9 @@
+# MarkdownLint 忽略檔案
+# 此檔案告訴markdownlint忽略某些檔案或目錄
+
+# 忽略所有包含長表格的markdown檔案
+*.md
+
+# 或者更精確的忽略規則
+# **/docs/*.md
+# README.md

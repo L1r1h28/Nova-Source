@@ -3,16 +3,17 @@
 定義所有模組使用的統一資料結構。
 """
 
+import statistics
 from dataclasses import dataclass, field
-from typing import Dict, Any, List, Optional, Union
 from datetime import datetime
 from pathlib import Path
-import statistics
+from typing import Any, Dict, List, Optional, Union
 
 
 @dataclass
 class Metric:
     """效能指標基類"""
+
     name: str
     value: Union[int, float]
     unit: str
@@ -22,17 +23,18 @@ class Metric:
     def to_dict(self) -> Dict[str, Any]:
         """轉換為字典格式"""
         return {
-            'name': self.name,
-            'value': self.value,
-            'unit': self.unit,
-            'timestamp': self.timestamp.isoformat(),
-            'metadata': self.metadata
+            "name": self.name,
+            "value": self.value,
+            "unit": self.unit,
+            "timestamp": self.timestamp.isoformat(),
+            "metadata": self.metadata,
         }
 
 
 @dataclass
 class PerformanceMetrics:
     """效能測試指標集合"""
+
     execution_time: Metric
     memory_usage: Metric
     cpu_usage: Optional[Metric] = None
@@ -42,16 +44,16 @@ class PerformanceMetrics:
     def to_dict(self) -> Dict[str, Any]:
         """轉換為字典格式"""
         result = {
-            'execution_time': self.execution_time.to_dict(),
-            'memory_usage': self.memory_usage.to_dict()
+            "execution_time": self.execution_time.to_dict(),
+            "memory_usage": self.memory_usage.to_dict(),
         }
 
         if self.cpu_usage:
-            result['cpu_usage'] = self.cpu_usage.to_dict()
+            result["cpu_usage"] = self.cpu_usage.to_dict()
         if self.gpu_usage:
-            result['gpu_usage'] = self.gpu_usage.to_dict()
+            result["gpu_usage"] = self.gpu_usage.to_dict()
         if self.io_operations:
-            result['io_operations'] = self.io_operations.to_dict()
+            result["io_operations"] = self.io_operations.to_dict()
 
         return result
 
@@ -59,6 +61,7 @@ class PerformanceMetrics:
 @dataclass
 class TestResult:
     """測試結果"""
+
     test_name: str
     function_name: str
     module_name: str
@@ -78,23 +81,24 @@ class TestResult:
     def to_dict(self) -> Dict[str, Any]:
         """轉換為字典格式"""
         return {
-            'test_name': self.test_name,
-            'function_name': self.function_name,
-            'module_name': self.module_name,
-            'status': self.status,
-            'metrics': self.metrics.to_dict(),
-            'iterations': self.iterations,
-            'start_time': self.start_time.isoformat(),
-            'end_time': self.end_time.isoformat(),
-            'duration': self.duration,
-            'error_message': self.error_message,
-            'metadata': self.metadata
+            "test_name": self.test_name,
+            "function_name": self.function_name,
+            "module_name": self.module_name,
+            "status": self.status,
+            "metrics": self.metrics.to_dict(),
+            "iterations": self.iterations,
+            "start_time": self.start_time.isoformat(),
+            "end_time": self.end_time.isoformat(),
+            "duration": self.duration,
+            "error_message": self.error_message,
+            "metadata": self.metadata,
         }
 
 
 @dataclass
 class BenchmarkResult:
     """基準測試結果"""
+
     function_name: str
     iterations: int
     execution_times: List[float]
@@ -120,7 +124,11 @@ class BenchmarkResult:
     @property
     def std_execution_time(self) -> float:
         """執行時間標準差"""
-        return statistics.stdev(self.execution_times) if len(self.execution_times) > 1 else 0.0
+        return (
+            statistics.stdev(self.execution_times)
+            if len(self.execution_times) > 1
+            else 0.0
+        )
 
     @property
     def avg_memory_usage(self) -> float:
@@ -135,61 +143,58 @@ class BenchmarkResult:
     def to_dict(self) -> Dict[str, Any]:
         """轉換為字典格式"""
         return {
-            'function_name': self.function_name,
-            'iterations': self.iterations,
-            'execution_time': {
-                'mean': self.avg_execution_time,
-                'min': self.min_execution_time,
-                'max': self.max_execution_time,
-                'std': self.std_execution_time
+            "function_name": self.function_name,
+            "iterations": self.iterations,
+            "execution_time": {
+                "mean": self.avg_execution_time,
+                "min": self.min_execution_time,
+                "max": self.max_execution_time,
+                "std": self.std_execution_time,
             },
-            'memory_usage': {
-                'mean': self.avg_memory_usage,
-                'values': self.memory_usages
+            "memory_usage": {
+                "mean": self.avg_memory_usage,
+                "values": self.memory_usages,
             },
-            'cpu_usage': {
-                'mean': self.avg_cpu_usage,
-                'values': self.cpu_usages
-            },
-            'gpu_usage': {
-                'values': self.gpu_usages
-            } if self.gpu_usages else {}
+            "cpu_usage": {"mean": self.avg_cpu_usage, "values": self.cpu_usages},
+            "gpu_usage": {"values": self.gpu_usages} if self.gpu_usages else {},
         }
 
 
 @dataclass
 class Issue:
     """代碼問題/問題"""
+
     file_path: Path
     line_number: int
     code: str
     message: str
-    issue_type: str = 'error'  # 'error', 'warning', 'info'
+    issue_type: str = "error"  # 'error', 'warning', 'info'
     column: Optional[int] = None
     rule: Optional[str] = None
-    severity: str = 'medium'  # 'low', 'medium', 'high', 'critical'
+    severity: str = "medium"  # 'low', 'medium', 'high', 'critical'
     fix_suggestion: Optional[str] = None
     metadata: Dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
         """轉換為字典格式"""
         return {
-            'file_path': str(self.file_path),
-            'line_number': self.line_number,
-            'column': self.column,
-            'issue_type': self.issue_type,
-            'code': self.code,
-            'message': self.message,
-            'rule': self.rule,
-            'severity': self.severity,
-            'fix_suggestion': self.fix_suggestion,
-            'metadata': self.metadata
+            "file_path": str(self.file_path),
+            "line_number": self.line_number,
+            "column": self.column,
+            "issue_type": self.issue_type,
+            "code": self.code,
+            "message": self.message,
+            "rule": self.rule,
+            "severity": self.severity,
+            "fix_suggestion": self.fix_suggestion,
+            "metadata": self.metadata,
         }
 
 
 @dataclass
 class AuditResult:
     """審計結果"""
+
     target_path: Path
     issues: List[Issue]
     statistics: Dict[str, Any]
@@ -205,33 +210,34 @@ class AuditResult:
     @property
     def errors_count(self) -> int:
         """錯誤數量"""
-        return len([i for i in self.issues if i.issue_type == 'error'])
+        return len([i for i in self.issues if i.issue_type == "error"])
 
     @property
     def warnings_count(self) -> int:
         """警告數量"""
-        return len([i for i in self.issues if i.issue_type == 'warning'])
+        return len([i for i in self.issues if i.issue_type == "warning"])
 
     def to_dict(self) -> Dict[str, Any]:
         """轉換為字典格式"""
         return {
-            'target_path': str(self.target_path),
-            'issues': [issue.to_dict() for issue in self.issues],
-            'statistics': self.statistics,
-            'scan_time': self.scan_time.isoformat(),
-            'duration': self.duration,
-            'summary': {
-                'total_issues': self.total_issues,
-                'errors': self.errors_count,
-                'warnings': self.warnings_count
+            "target_path": str(self.target_path),
+            "issues": [issue.to_dict() for issue in self.issues],
+            "statistics": self.statistics,
+            "scan_time": self.scan_time.isoformat(),
+            "duration": self.duration,
+            "summary": {
+                "total_issues": self.total_issues,
+                "errors": self.errors_count,
+                "warnings": self.warnings_count,
             },
-            'metadata': self.metadata
+            "metadata": self.metadata,
         }
 
 
 @dataclass
 class SystemInfo:
     """系統資訊"""
+
     platform: str
     python_version: str
     cpu_count: int
@@ -244,20 +250,21 @@ class SystemInfo:
     def to_dict(self) -> Dict[str, Any]:
         """轉換為字典格式"""
         return {
-            'platform': self.platform,
-            'python_version': self.python_version,
-            'cpu_count': self.cpu_count,
-            'memory_total_gb': self.memory_total_gb,
-            'gpu_available': self.gpu_available,
-            'gpu_count': self.gpu_count,
-            'gpu_info': self.gpu_info,
-            'metadata': self.metadata
+            "platform": self.platform,
+            "python_version": self.python_version,
+            "cpu_count": self.cpu_count,
+            "memory_total_gb": self.memory_total_gb,
+            "gpu_available": self.gpu_available,
+            "gpu_count": self.gpu_count,
+            "gpu_info": self.gpu_info,
+            "metadata": self.metadata,
         }
 
 
 @dataclass
 class Report:
     """綜合報告"""
+
     title: str
     report_type: str  # 'performance', 'audit', 'monitoring', 'system'
     generated_at: datetime = field(default_factory=datetime.now)
@@ -269,11 +276,11 @@ class Report:
     def to_dict(self) -> Dict[str, Any]:
         """轉換為字典格式"""
         return {
-            'title': self.title,
-            'report_type': self.report_type,
-            'generated_at': self.generated_at.isoformat(),
-            'data': self.data,
-            'summary': self.summary,
-            'recommendations': self.recommendations,
-            'metadata': self.metadata
+            "title": self.title,
+            "report_type": self.report_type,
+            "generated_at": self.generated_at.isoformat(),
+            "data": self.data,
+            "summary": self.summary,
+            "recommendations": self.recommendations,
+            "metadata": self.metadata,
         }

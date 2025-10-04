@@ -3,16 +3,17 @@
 提供通用的工具函數和裝飾器。
 """
 
-import time
 import functools
-from typing import Callable, Any, Dict, Optional, Tuple
+import time
 from contextlib import contextmanager
+from typing import Any, Callable, Dict, Tuple
 
 from nova.core.logging import get_logger
 
 
 def timer(func: Callable) -> Callable:
     """計時裝飾器"""
+
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         start_time = time.time()
@@ -24,7 +25,7 @@ def timer(func: Callable) -> Callable:
             elapsed = time.time() - start_time
             logger.debug(f"執行完成: {func.__name__}, 耗時: {elapsed:.4f} 秒")
             return result
-        except Exception as e:
+        except Exception:
             elapsed = time.time() - start_time
             logger.error(f"執行失敗: {func.__name__}, 耗時: {elapsed:.4f} 秒")
             raise
@@ -43,7 +44,7 @@ def time_context(description: str = "操作"):
         yield
         elapsed = time.time() - start_time
         logger.debug(f"{description}完成, 耗時: {elapsed:.4f} 秒")
-    except Exception as e:
+    except Exception:
         elapsed = time.time() - start_time
         logger.error(f"{description}失敗, 耗時: {elapsed:.4f} 秒")
         raise
@@ -53,6 +54,7 @@ def time_context(description: str = "操作"):
 
 def cache_result(ttl_seconds: int = 300):
     """結果快取裝飾器"""
+
     def decorator(func: Callable) -> Callable:
         cache: Dict[str, Tuple[Any, float]] = {}
 
@@ -74,7 +76,8 @@ def cache_result(ttl_seconds: int = 300):
             # 清理過期快取
             current_time = time.time()
             expired_keys = [
-                key for key, (_, timestamp) in cache.items()
+                key
+                for key, (_, timestamp) in cache.items()
                 if current_time - timestamp >= ttl_seconds
             ]
             for key in expired_keys:
@@ -83,11 +86,13 @@ def cache_result(ttl_seconds: int = 300):
             return result
 
         return wrapper
+
     return decorator
 
 
 def retry(max_attempts: int = 3, delay: float = 1.0, backoff: float = 2.0):
     """重試裝飾器"""
+
     def decorator(func: Callable) -> Callable:
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
@@ -101,7 +106,9 @@ def retry(max_attempts: int = 3, delay: float = 1.0, backoff: float = 2.0):
                 except Exception as e:
                     last_exception = e
                     if attempt < max_attempts - 1:
-                        logger.warning(f"嘗試 {attempt + 1} 失敗, {current_delay:.1f} 秒後重試: {e}")
+                        logger.warning(
+                            f"嘗試 {attempt + 1} 失敗, {current_delay:.1f} 秒後重試: {e}"
+                        )
                         time.sleep(current_delay)
                         current_delay *= backoff
                     else:
@@ -111,21 +118,23 @@ def retry(max_attempts: int = 3, delay: float = 1.0, backoff: float = 2.0):
             if last_exception:
                 raise last_exception
             else:
-                raise RuntimeError(f"函數 {func.__name__} 在 {max_attempts} 次嘗試後失敗，但沒有捕獲到異常")
+                raise RuntimeError(
+                    f"函數 {func.__name__} 在 {max_attempts} 次嘗試後失敗，但沒有捕獲到異常"
+                )
 
         return wrapper
+
     return decorator
 
 
 def validate_input(**validators):
     """輸入驗證裝飾器"""
+
     def decorator(func: Callable) -> Callable:
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
-            logger = get_logger(func.__module__)
-
             # 驗證位置參數
-            arg_names = func.__code__.co_varnames[:func.__code__.co_argcount]
+            arg_names = func.__code__.co_varnames[: func.__code__.co_argcount]
             for i, arg in enumerate(args):
                 if i < len(arg_names):
                     param_name = arg_names[i]
@@ -144,12 +153,13 @@ def validate_input(**validators):
             return func(*args, **kwargs)
 
         return wrapper
+
     return decorator
 
 
 def format_bytes(size: float) -> str:
     """格式化字節數為人類可讀格式"""
-    for unit in ['B', 'KB', 'MB', 'GB', 'TB']:
+    for unit in ["B", "KB", "MB", "GB", "TB"]:
         if size < 1024.0:
             return f"{size:.1f} {unit}"
         size /= 1024.0

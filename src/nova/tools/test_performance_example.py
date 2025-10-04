@@ -4,7 +4,6 @@
 用於測試 Nova 效能測試器的功能
 """
 
-import time
 import math
 import random
 
@@ -19,13 +18,10 @@ def simple_calculation(n: int = 1000) -> float:
 
 def memory_intensive_task(size: int = 100000) -> list:
     """記憶體密集型任務"""
-    data = []
-    for i in range(size):
-        data.append({
-            'id': i,
-            'value': random.random(),
-            'text': f"item_{i}" * 10
-        })
+    data = [
+        {"id": i, "value": random.random(), "text": f"item_{i}" * 10}
+        for i in range(size)
+    ]
     return data
 
 
@@ -44,20 +40,21 @@ def io_simulation_task(file_count: int = 10) -> int:
     for i in range(file_count):
         # 模擬檔案操作
         filename = f"temp_file_{i}.txt"
-        with open(filename, 'w') as f:
+        with open(filename, "w") as f:
             content = f"Test content for file {i}\n" * 100
             f.write(content)
             total_size += len(content)
 
         # 模擬讀取
-        with open(filename, 'r') as f:
+        with open(filename) as f:
             _ = f.read()
 
         # 清理（實際應用中可能不需要）
         try:
             import os
+
             os.remove(filename)
-        except:
+        except OSError:
             pass
 
     return total_size
@@ -68,6 +65,7 @@ def optimized_calculation(n: int = 1000) -> float:
     # 使用向量化計算（如果有 numpy）
     try:
         import numpy as np
+
         x = np.arange(n, dtype=np.float64)
         result = np.sum(np.sin(x) * np.cos(x))
         return float(result)

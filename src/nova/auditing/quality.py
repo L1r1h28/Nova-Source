@@ -11,7 +11,6 @@
   nova-audit --help             # 顯示幫助信息
 """
 
-import argparse
 import os
 import subprocess
 import sys
@@ -30,11 +29,27 @@ except ImportError:
 
 class CodeQualityConfig:
     """配置管理類"""
+
     _config_cache = {}  # TCK優化：配置快取，避免重複檔案I/O
 
     def __init__(self, config_path: Optional[Path] = None):
-        self.config_path = config_path or Path(__file__).parent.parent.parent / "pyproject.toml"
+        self.config_path = config_path or self._find_config_file()
         self.config = self._load_config_cached()
+
+    def _find_config_file(self) -> Path:
+        """查找配置文件"""
+        # 從當前工作目錄開始向上查找
+        current_dir = Path.cwd()
+
+        # 檢查當前目錄及其父目錄
+        for _ in range(5):  # 最多向上查找5級目錄
+            config_file = current_dir / "pyproject.toml"
+            if config_file.exists():
+                return config_file
+            current_dir = current_dir.parent
+
+        # 如果找不到，返回默認路徑
+        return Path(__file__).parent.parent.parent / "pyproject.toml"
 
     def _load_config_cached(self) -> dict:
         """載入TOML配置 (TCK優化：使用快取避免重複I/O)"""
@@ -395,55 +410,3 @@ def detailed_check(checker: CodeQualityChecker) -> int:
     print("   • 在 VS Code 中按 Ctrl+Shift+I 進行快速修復")
 
     return 0
-
-
-def main():
-    """主函數"""
-    parser = argparse.ArgumentParser(
-        description="統一代碼質量檢查工具",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-使用示例:
-  python code_quality.py                    # 快速檢查模式 (當前目錄)
-  python code_quality.py --detailed         # 詳細檢查模式 (包含統計)
-  python code_quality.py --path src/        # 指定路徑檢查
-  python code_quality.py --files file1.py file2.py  # 指定檔案檢查
-  python code_quality.py --config custom.toml  # 指定配置文件
-  python code_quality.py --help             # 顯示此幫助信息
-        """,
-    )
-
-    parser.add_argument(
-        "--detailed",
-        "-d",
-        action="store_true",
-        help="啟用詳細檢查模式 (包含項目統計信息)",
-    )
-
-    parser.add_argument(
-        "--path", "-p", action="append", help="指定要檢查的子目錄路徑 (可多次使用)"
-    )
-
-    parser.add_argument("--files", "-f", nargs="+", help="指定要檢查的Python檔案")
-
-    parser.add_argument(
-        "--config", "-c", type=Path, help="指定配置文件路徑 (默認: pyproject.toml)"
-    )
-
-    args = parser.parse_args()
-
-    # 載入配置
-    config = CodeQualityConfig(args.config)
-
-    # 創建檢查器
-    checker = CodeQualityChecker(config, args.path, args.files)
-
-    # 運行檢查
-    if args.detailed:
-        return detailed_check(checker)
-    else:
-        return quick_check(checker)
-
-
-if __name__ == "__main__":
-    sys.exit(main())
