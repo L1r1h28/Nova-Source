@@ -44,7 +44,7 @@ markdown = [
 nova = "nova.cli:main"
 
 [tool.setuptools.packages.find]
-where = ["."]
+where = ["src"]
 
 [tool.ruff]
 line-length = 88

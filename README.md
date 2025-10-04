@@ -71,17 +71,92 @@ pip install -e .
 |-----|------|------|
 | `nova system` | 顯示系統資訊 | `nova system` |
 | `nova config --show` | 顯示當前配置 | `nova config --show` |
-| `nova monitor --continuous 300` | 連續記憶體監控 300 秒 | `nova monitor --continuous 300` |
-| `nova performance --module my_module.py --function my_function` | 測試特定函數效能 | `nova performance --module test.py --function main` |
-| `nova audit --path src/` | 審計指定路徑代碼 | `nova audit --path src/` |
+| `nova audit` | 代碼質量檢查 | `nova audit --path src/ --detailed` |
+| `nova analyze` | 代碼分析 | `nova analyze --path src/` |
+| `nova monitor` | 系統監控 | `nova monitor --continuous 300` |
+| `nova cpu` | CPU 監控 | `nova cpu --delay-check 80` |
+| `nova cleanup` | 記憶體清理 | `nova cleanup --level critical` |
+| `nova markdown` | Markdown 檔案格式化 | `nova markdown docs/ --recursive` |
 
-### 舊版命令 (向後相容)
+### 詳細命令說明
 
-| 舊命令 | 新對應命令 | 說明 |
-|--------|-----------|------|
-| `nova-audit` | `nova audit` | 代碼審計 |
-| `nova-analyze` | `nova audit` | 代碼分析 |
-| `nova-sensor` | `nova monitor` / `nova performance` | 監控和效能測試 |
+#### 代碼審計 (`nova audit`)
+
+```bash
+# 基本檢查
+nova audit
+
+# 詳細檢查包含統計
+nova audit --detailed
+
+# 檢查特定路徑
+nova audit --path src/nova/
+
+# 檢查特定檔案
+nova audit --files src/nova/cli.py src/nova/core/config.py
+```
+
+#### 代碼分析 (`nova analyze`)
+
+```bash
+# 分析當前目錄
+nova analyze
+
+# 分析特定目錄
+nova analyze --path src/
+```
+
+#### 系統監控 (`nova monitor`)
+
+```bash
+# 單次監控
+nova monitor
+
+# 連續監控 5 分鐘
+nova monitor --continuous 300
+
+# 每 10 秒監控一次
+nova monitor --continuous 300 --interval 10
+```
+
+#### CPU 監控 (`nova cpu`)
+
+```bash
+# 基本 CPU 檢查
+nova cpu
+
+# 檢查 CPU 延遲 (閾值 80%)
+nova cpu --delay-check 80
+```
+
+#### 記憶體清理 (`nova cleanup`)
+
+```bash
+# 正常清理
+nova cleanup
+
+# 關鍵清理 (更激進)
+nova cleanup --level critical
+```
+
+#### Markdown 處理 (`nova markdown`)
+
+```bash
+# 格式化單個檔案
+nova markdown README.md
+
+# 格式化整個目錄
+nova markdown docs/
+
+# 遞歸處理子目錄
+nova markdown . --recursive
+
+# 僅檢查不修改
+nova markdown docs/ --dry-run
+
+# 自訂行長度限制
+nova markdown docs/ --max-line-length 100
+```
 
 ## 配置
 
@@ -125,10 +200,43 @@ black src/
 ruff check src/ --fix
 ```
 
-## 許可證
+## 📦 專案功能總覽
 
-MIT License
+### 🔍 代碼審計模組
 
-## 貢獻
+- **代碼質量檢查**: 自動檢查代碼規範和最佳實踐
+- **詳細統計**: 提供項目規模、複雜度等統計信息
+- **Ruff 集成**: 使用現代 Python 代碼檢查工具
+- **自動修復**: 支持自動修復常見代碼問題
 
-歡迎提交 Issue 和 Pull Request！
+### 📊 系統監控
+
+- **即時記憶體監控**: 追蹤記憶體使用情況
+- **連續監控模式**: 支持長時間監控
+- **CPU 效能分析**: 檢查 CPU 使用率和延遲
+- **自訂監控間隔**: 靈活的監控頻率設置
+
+### 🧹 系統清理
+
+- **記憶體清理**: 釋放系統記憶體
+- **多級清理**: 正常和關鍵級別清理選項
+- **安全清理**: 不影響系統穩定性的清理操作
+
+### 📝 Markdown 處理
+
+- **自動格式化**: 統一 Markdown 文件格式
+- **遞歸處理**: 支持目錄和子目錄批量處理
+- **自訂規則**: 可配置格式化規則和行長度限制
+- **備份功能**: 自動備份修改前的文件
+
+### 🔧 配置管理
+
+- **統一配置**: 集中式配置管理系統
+- **環境變數支持**: 支持 .env 文件配置
+- **靈活設定**: 可自訂各模組行為
+
+### 📢 通知系統
+
+- **Discord 集成**: 自動發送通知到 Discord
+- **自訂通知規則**: 基於事件觸發通知
+- **插件架構**: 支持擴展更多通知渠道
