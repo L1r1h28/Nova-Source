@@ -1,0 +1,18 @@
+{
+  "threshold": 0.80,
+  "critical_threshold": 0.90,
+  "check_interval": 30,
+  "enable_gpu_monitoring": true,
+  "log_level": "INFO",
+  "cleanup_levels": {
+    "normal": {
+      "gc_collect": true,
+      "gpu_cache_clear": false
+    },
+    "critical": {
+      "gc_collect": true,
+      "gpu_cache_clear": true,
+      "force_cleanup": true
+    }
+  }
+}
