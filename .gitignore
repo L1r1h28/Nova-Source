@@ -169,3 +169,48 @@ memory_stats.json
 # 開發筆記
 notes/
 scratch/
+
+# 私人資料和憑證
+.env
+.env.*
+.env.local
+.env.development
+.env.production
+.env.staging
+
+# API keys 和 tokens
+api_keys.json
+tokens.json
+credentials.json
+auth.json
+
+# 數據庫文件
+*.db
+*.sqlite
+*.sqlite3
+database.db
+db.sqlite3
+
+# 私有目錄
+private/
+secrets/
+credentials/
+
+# 報告和敏感數據
+reports/
+sensitive_data/
+user_data/
+
+# 快取和臨時文件
+.cache/
+.tmp/
+temp/
+*.tmp
+
+# 備份文件
+*.bak
+*.backup
+*~
+
+# 安全檢查腳本 (可選)
+# check_security.py
