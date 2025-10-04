@@ -22,6 +22,7 @@ import gc
 import platform
 import threading
 import importlib.util
+import os
 
 # 可選依賴
 try:
@@ -502,3 +503,40 @@ def memory_profile(func: Callable, *args, **kwargs) -> Dict[str, Any]:
         'peak_memory_mb': result.peak_memory / (1024 * 1024),
         'execution_time': result.execution_time
     }
+
+
+def discord_notify_benchmark(func: Callable, webhook_url: str, title: Optional[str] = None,
+                           mode: str = "general", iterations: int = 10,
+                           *args, **kwargs) -> Dict[str, Any]:
+    """帶 Discord 通知的基準測試"""
+    try:
+        from .discord_notifier import Discord
+    except ImportError:
+        print("⚠️ Discord 通知模組不可用，跳過通知")
+        return quick_benchmark(func, iterations, *args, **kwargs)
+
+    # 運行基準測試
+    result = quick_benchmark(func, iterations, *args, **kwargs)
+
+    # 準備通知訊息
+    message = f"效能測試完成！\n"
+    message += f"測試函數: {func.__name__}\n"
+    message += f"迭代次數: {iterations}\n"
+    message += f"平均執行時間: {result['execution_time']['mean']:.6f} 秒\n"
+    message += f"平均記憶體使用: {result['memory_usage']['mean'] / (1024*1024):.2f} MB\n"
+    message += f"平均 CPU 使用率: {result['cpu_usage']['mean']:.2f}%\n"
+    message += f"測試時間: {time.strftime('%Y-%m-%d %H:%M:%S')}"
+
+    # 發送 Discord 通知
+    try:
+        Discord(
+            message=message,
+            title=title or f"Nova 效能測試 - {func.__name__}",
+            mode=mode,  # type: ignore
+            target_webhook_url=webhook_url
+        )
+        print("✅ Discord 通知發送成功！")
+    except Exception as e:
+        print(f"❌ Discord 通知發送失敗: {e}")
+
+    return result
